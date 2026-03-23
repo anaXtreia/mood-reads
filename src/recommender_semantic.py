@@ -1,48 +1,43 @@
 import numpy as np
-import streamlit as st
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from src.recommender import load_data
-from src.config import CLEAN_DATA_PATH, MOOD_MAP
+from functools import lru_cache
 
-@st.cache_resource
+from src.recommender import load_data
+from src.config import MOOD_MAP, SEMANTIC_EMBEDDINGS_PATH
+
+@lru_cache(maxsize=1)
 def load_semantic_model():
-    """
-    Carrega o modelo all-MiniLM-L6-v2.
-    Pequeno (80MB), rápido, e muito bom para similaridade semântica.
-    Só descarrega uma vez — depois fica em cache local.
-    """
+    """Carrega o modelo do HuggingFace apenas uma vez para a RAM."""
     return SentenceTransformer('all-MiniLM-L6-v2')
 
-@st.cache_data
-def build_embeddings(_model, contents: list[str]) -> np.ndarray:
-    """Gera embeddings para todos os livros. Cacheado — só corre uma vez."""
-    return _model.encode(contents, show_progress_bar=True)
+@lru_cache(maxsize=1)
+def load_book_embeddings():
+    """Carrega os embeddings pré-computados do disco."""
+    return np.load(SEMANTIC_EMBEDDINGS_PATH)
 
 def recommend_semantic(mood: str, n: int = 5) -> list[dict]:
-    """Recomenda usando embeddings semânticos em vez de TF-IDF."""
-    df = load_data(CLEAN_DATA_PATH)
+    """Recomenda usando os embeddings semânticos pré-computados."""
+    df = load_data()
     model = load_semantic_model()
+    book_embeddings = load_book_embeddings()
 
-    # Embeddings dos livros (cacheados)
-    book_embeddings = build_embeddings(model, df['content'].tolist())
-
-    # Embedding do mood query
     mood_query = MOOD_MAP.get(mood, mood)
     mood_embedding = model.encode([mood_query])
 
-    # Similaridade
     scores = cosine_similarity(mood_embedding, book_embeddings).flatten()
     top_indices = scores.argsort()[-n:][::-1]
 
-    return [
-        {
-            "title": df.iloc[i]['title'],
-            "author": df.iloc[i]['author_name'],
-            "rating": df.iloc[i]['average_rating'],
-            "imageURL": df.iloc[i]['imageURL'],
-            "amazonLink": df.iloc[i]['amazonLink'],
+    recommendations = []
+    for i in top_indices:
+        row = df.iloc[i]
+        recommendations.append({
+            "title": row['title'],
+            "author": row['author_name'],
+            "rating": row['average_rating'],
+            "imageURL": row['imageURL'],
+            "amazonLink": row['amazonLink'],
             "why": f"Semantic match: {scores[i]:.2f} ✨"
-        }
-        for i in top_indices
-    ]
+        })
+
+    return recommendations

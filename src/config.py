@@ -6,6 +6,12 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DATA_PATH = DATA_DIR / "goodreads_books_dataset.csv"
 CLEAN_DATA_PATH = DATA_DIR / "clean_books_ready.csv"
 
+# NOVOS CAMINHOS PARA OS MODELOS
+MODELS_DIR = BASE_DIR / "models"
+TFIDF_VECTORIZER_PATH = MODELS_DIR / "tfidf_vectorizer.pkl"
+TFIDF_MATRIX_PATH = MODELS_DIR / "tfidf_matrix.pkl"
+SEMANTIC_EMBEDDINGS_PATH = MODELS_DIR / "book_embeddings.npy"
+
 # --- Modelo ---
 TFIDF_STOP_WORDS = "english"
 GENRE_BOOST_WEIGHT: float = 0.1

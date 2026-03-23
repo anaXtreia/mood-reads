@@ -21,7 +21,7 @@ Goodreads Books Dataset: ~1k books with title, description, genres, ratings, cov
 ## 🚀 How to run
 
 ```bash
-git clone https://github.com/yourname/moodreads
+git clone https://github.com/anaXtreia/mood-reads
 cd moodreads
 pip install -r requirements.txt
 
